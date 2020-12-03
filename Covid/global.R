@@ -1,6 +1,7 @@
 # Used packages
-packs = c("shiny", "shinydashboard", "tidyverse", "scales", "DT", "openair",
-          "leaflet","RColorBrewer", "widgetframe", "lubridate",  "plotly")
+packs = c("shiny", "shinydashboard", "tidyverse", "scales", "DT",
+          "leaflet","RColorBrewer", "widgetframe", "lubridate",  "plotly",
+          "shinydashboardPlus", "htmlwidgets")
 
 # Run the following command to verify that the required packages are installed. If some package
 # is missing, it will be installed automatically

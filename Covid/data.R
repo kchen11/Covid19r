@@ -83,7 +83,6 @@ recovered_global_df = recovered_global_df %>%
 confirmed_us_df = confirmed_us_df %>% 
   mutate(date = mdy(date)) %>%
   mutate(
-    weekday = weekdays(date), #a column for the weekday of the date
     month = month(date), #a column for the month of the date
     day = day(date), #a column for the month of the date
     year = year(date)
@@ -92,7 +91,6 @@ confirmed_us_df = confirmed_us_df %>%
 death_us_df = death_us_df %>% 
   mutate(date = mdy(date)) %>% 
   mutate(
-    weekday = weekdays(date), #a column for the weekday of the date
     month = month(date), #a column for the month of the date
     day = day(date), #a column for the month of the date
     year = year(date)
@@ -101,7 +99,6 @@ death_us_df = death_us_df %>%
 confirmed_global_df = confirmed_global_df %>% 
   mutate(date = mdy(date)) %>% 
   mutate(
-    weekday = weekdays(date), #a column for the weekday of the date
     month = month(date), #a column for the month of the date
     day = day(date), #a column for the month of the date
     year = year(date)
@@ -110,7 +107,6 @@ confirmed_global_df = confirmed_global_df %>%
 death_global_df = death_global_df %>% 
   mutate(date = mdy(date)) %>% 
   mutate(
-    weekday = weekdays(date), #a column for the weekday of the date
     month = month(date), #a column for the month of the date
     day = day(date), #a column for the month of the date
     year = year(date)
@@ -119,7 +115,6 @@ death_global_df = death_global_df %>%
 recovered_global_df = recovered_global_df %>% 
   mutate(date = mdy(date)) %>% 
   mutate(
-    weekday = weekdays(date), #a column for the weekday of the date
     month = month(date), #a column for the month of the date
     day = day(date), #a column for the month of the date
     year = year(date)
@@ -127,13 +122,13 @@ recovered_global_df = recovered_global_df %>%
 
 # combine all counties into state for metric 
 confirmed_us_df = confirmed_us_df %>% 
-  group_by(Country_Region, Province_State, date, month, day, weekday, year) %>% 
+  group_by(Country_Region, Province_State, date, month, day, year) %>% 
   summarise(Lat = mean(Lat), Long = mean(Long), 
             confirmed = sum(confirmed), 
             .groups = 'drop')
 
 death_us_df = death_us_df %>% 
-  group_by(Country_Region, Province_State, date, month, day, weekday, year) %>% 
+  group_by(Country_Region, Province_State, date, month, day, year) %>% 
   summarise(Lat = mean(Lat), Long = mean(Long), 
             death = sum(death), 
             .groups = 'drop')
@@ -145,7 +140,7 @@ df_us = confirmed_us_df %>%
          sub_region = `Province_State`) %>% 
   select(region, sub_region, Lat, Long, 
          date, confirmed, death, month, 
-         day, weekday, year)
+         day, year)
 
 
 df_global = confirmed_global_df %>%
@@ -154,25 +149,25 @@ df_global = confirmed_global_df %>%
          sub_region = `Province_State`) %>% 
   select(region, sub_region, Lat, Long, 
          date, confirmed, death, month, 
-         day, weekday, year)
+         day, year)
 
 # temp all 
 confirmed_cases_all = confirmed_global_df %>% 
   rename(region = `Country_Region`,
          sub_region = `Province_State`) %>% 
-  group_by(region,date) %>%
+  group_by(region, date) %>%
   summarise(confirmed = sum(confirmed), .groups = 'drop')
 
 recovered_cases_all = recovered_global_df %>% 
   rename(region = `Country_Region`,
          sub_region = `Province_State`) %>% 
-  group_by(region,date) %>%
+  group_by(region, date) %>%
   summarise(recovered = sum(recovered), .groups = 'drop')
 
 deaths_cases_all = death_global_df %>% 
   rename(region = `Country_Region`,
          sub_region = `Province_State`) %>% 
-  group_by(region,date) %>%
+  group_by(region, date) %>%
   summarise(deaths = sum(death), .groups = 'drop')
 
 
@@ -183,4 +178,4 @@ df = confirmed_cases_all %>%
   group_by(region, date) %>%
   summarise(confirmed = sum(confirmed), death = sum(deaths), 
             recovered = sum(recovered), .groups = 'drop') %>%
-  select(region, date, confirmed, death, recovered)
+  select_all()

@@ -1,36 +1,33 @@
 library(scales)
 library(DT)
-library(openair)
 library(leaflet)
 library(RColorBrewer)
 library(tidyverse)
+library(htmlwidgets)
 library(widgetframe)
 library(plotly)
 
 function(input, output, session) {
-  
+
   #Core Objective 1
   output$text <- renderText({
     
     df <- df %>%
-      filter(date == input$date[2])
+      group_by(region) %>%
+      filter(date == input$date[2] & region %in% input$regions) %>%
+      select(date, region, confirmed, death, recovered)
+      
+    paste0("The total confirmed cases in the selected regions as of ",input$date[2], " is: ", sum(df$confirmed), sep = '\n',
+           "The total deaths in the selected regions as of ",input$date[2], " is: ", sum(df$death), sep = '\n',
+           "The total recovered cases in the selected regions as of ",input$date[2], " is: ", sum(df$recovered))
     
-    paste0("Total Confirmed Cases in the world as of", sep = ' ',
-           max(df$date), ": ", 
-           format(sum(df$confirmed), big.mark = ',', trim = TRUE), sep = '\n',
-           "Total Recovered Cases in the world as of", sep = ' ',
-           max(df$date), ": ",
-           format(sum(df$recovered), big.mark = ',', trim = TRUE), sep = '\n',
-           "Total Deaths in the world as of", sep = ' ',
-           max(df$date), ": ",
-           format(sum(df$death),big.mark = ',', trim = TRUE), sep = '\n')
   })
   #Core Objective 2
   output$plot <- renderPlot({
     
     df <- df %>%
       group_by(region) %>%
-      filter(date == input$date[2]) %>%
+      filter(date == input$date[2] & region %in% input$regions) %>%
       arrange(desc(confirmed)) %>%
       head(5)
     
@@ -40,9 +37,9 @@ function(input, output, session) {
                  fill = factor(confirmed), label = df$confirmed, 
                  size =  df$confirmed)) + 
       geom_bar(stat = 'identity') + 
-      labs(subtitle = "Use the filter options: end date", x = "Country") + 
+      labs(x = "Country") + 
       geom_text(size = 5, vjust= 1.4) + 
-      scale_y_continuous(name="confirmed", labels = comma)
+      scale_y_continuous(name="Confirmed", labels = comma)
     
     plot + 
       scale_fill_brewer(palette = "Reds") + 
@@ -58,26 +55,28 @@ function(input, output, session) {
   })
   #Core Objective 3
   output$table <- renderDataTable({
-    
+
     region <- reactive({
       filter(df, region %in% input$regions) %>%
-      selectByDate(start = input$date[1], end = input$date[2])
+      filter(date >= input$date[1] & date <= input$date[2])
     })
     
     datatable(region(), 
               colnames = c('Date', 'Region', 'Confirmed', 
                            'Death', 'Recovered'),
               caption = "To use this table, use the filter options: date and region", 
-              extensions = c('Scroller'),
+              extensions = c('Scroller', 'Buttons'),
               options = list(
+                dom = 'Bfrtip',
                 orderMulti = TRUE,
                 searching = TRUE,
                 scroller = TRUE,
                 scrollY = 500,
-                deferRender = TRUE
+                deferRender = TRUE,
+                buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
               )
     )
-  })
+  }, server = FALSE)
   # Menu Objective 1
   output$plot2 <- renderPlot({
     
@@ -96,7 +95,7 @@ function(input, output, session) {
       geom_text(size = 5, vjust= 1.4)
     
     plot2 + 
-      scale_fill_brewer(palette = "Reds") + 
+      scale_fill_brewer(palette = "Blues") + 
       theme(legend.position = "none", 
             axis.text.x = element_text(size = 12.5), 
             axis.text.y = element_text(size = 12.5),
@@ -136,11 +135,12 @@ function(input, output, session) {
     
     datatable(ga_june, 
               colnames = c("Region", "Confirmed", "Month", "Year"),
-              extensions = c('Responsive','Scroller'),
-              options = list(dom = "Bfrtip",
+              extensions = c('Responsive','Scroller', 'Buttons'),
+              options = list(dom = 'Bfrtip',
                              scroller = TRUE,
                              scrollY = 500,
-                             deferRender = TRUE)
+                             deferRender = TRUE,
+                             buttons = c('copy', 'csv', 'excel', 'pdf', 'print'))
     )
   })
   # Menu Objective 3
@@ -169,33 +169,32 @@ function(input, output, session) {
   output$table3 <- renderDataTable({
     
     df <- df %>%
-      mutate(recovery_rate = (round(recovered/confirmed,3))) %>%
-      as_tibble() %>%
+      mutate(recovery_rate = (round(recovered/confirmed * 100, 2))) %>%
       group_by(region) %>%
-      filter(date == max(date)) %>%
+      filter(date == max(date) & confirmed > 100000) %>%
       select(region, date, confirmed, recovered, recovery_rate) %>%
-      arrange(desc(recovery_rate)) %>%
-      mutate(recovery_rate = paste0(recovery_rate, "%"))
+      arrange(desc(recovery_rate))
     
     datatable(df, 
-              colnames = c("Region", "Date", "Confirmed", "Recovered","Recovery Rates"),
+              colnames = c("Region", "Date", "Confirmed", "Recovered","Recovery Rates (%)"),
               caption = "Recovery Data may not reflect real-world representation 
               in some countries due to poor data recording",
-              extensions = c('Responsive','Scroller'),
-              options = list(dom = "Bfrtip",
+              extensions = c('Responsive','Scroller', 'Buttons'),
+              options = list(dom = 'Bfrtip',
                              scroller = TRUE,
                              scrollY = 500,
-                             deferRender = TRUE)
+                             deferRender = TRUE,
+                             buttons = c('copy', 'csv', 'excel', 'pdf', 'print'))
     )
   })
   #Menu Objective 5
   output$text2<- renderText({
     
     us_recovery <- recovered_cases_all %>%
-      group_by(region, date) %>%
-      filter(region == 'US' & recovered == 3) %>%
+      group_by(region, date, recovered) %>%
+      filter(region == 'US' & recovered >= 1) %>%
+      head(1) %>%
       select_all()
-    
     
     paste0("The first recorded individuals to recover from the coronavirus in the USA was on ", 
            min(us_recovery$date), " where ", unique(us_recovery$recovered)," persons recovered.")
@@ -221,9 +220,9 @@ function(input, output, session) {
       frameWidget()
   }
   output$map <- renderLeaflet({mapped})
-  #devs kc
-  output$reach <- renderText({
-    paste0("Feel free to reach out!")
+  #Icon Source
+  output$saucyicon <- renderText({
+    paste0("Source for icons")
   })
   #data source
   output$saucy <- renderText({
@@ -231,4 +230,5 @@ function(input, output, session) {
            sep = '\n',
           "The link can be found below!")
   })
+  
 }

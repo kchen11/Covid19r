@@ -1,10 +1,9 @@
 library(shinydashboard)
+library(shinydashboardPlus)
 library(shiny)
 library(leaflet)
 library(tidyverse)
 library(plotly)
-
-
 
 dashboardPage(
 
@@ -15,16 +14,7 @@ dashboardPage(
   dashboardSidebar(
     width = 230,
     sidebarMenu(
-      selectizeInput('regions', 'Multi-select Regions', 
-                     choices = unique(df$region), 
-                     multiple = TRUE, 
-                     width = 'auto'),
-      dateRangeInput("date", "Enter Date Range", 
-                     start = '2020/01/22', end = max(df$date),
-                     min = '2020/01/22', max =max(df$date)),
-      menuItem("Current Statistics", tabName = "Core", icon = icon('th')),
-      menuItem("Coronavirus Datatable", tabName = "Core2", icon = icon('table')),
-      menuItem("Confirmed by Country", tabName = "Core3", icon = icon('bar-chart-o')),
+      menuItem("Current Statistics", tabName = "Core", icon = icon('calendar')),
       menuItem("Deaths by Country", tabName = "Menu1", icon = icon('bar-chart-o')),
       menuItem("US Confirmed Cases (June)", tabName = "Menu2", icon = icon('table')),
       menuItem("GA Monthly Trend", tabName = "Menu3", icon = icon('chart-line')),
@@ -38,22 +28,30 @@ dashboardPage(
   
   dashboardBody(
     tabItems(
-      tabItem(tabName = "Core",
-              h3("Current Statistics"),
-              box(title = "Global totals",
-                  footer = "Edit totals with end date",
-                  solidHeader = TRUE, 
-                  verbatimTextOutput("text"))
+      tabItem(
+        tabName = "Core",
+        fluidRow(
+          tabBox(
+            tabPanel("Global totals", verbatimTextOutput("text"), 
+                     icon = icon('th')),
+            tabPanel("Top 5 Countries with Highest Confirmed Cases", 
+                     plotOutput("plot"), icon = icon('bar-chart-o')),
+            tabPanel("Coronavirus Datatable", dataTableOutput("table"), 
+                     icon = icon('table'))
+          ),
+          box(
+            width = 2,
+            selectizeInput('regions', 'Multi-select Regions', 
+                           choices = unique(df$region), 
+                           multiple = TRUE, 
+                           width = 'auto'),
+            
+            dateRangeInput("date", "Enter Date Range", 
+                           start = '2020/01/22', end = max(df$date),
+                           min = '2020/01/22', max = max(df$date))
+          )
+        )
       ),
-      tabItem(tabName = "Core2",
-              box(title = 'Coronavirus Datatable',
-                  dataTableOutput('table'))
-              ),
-      tabItem(tabName = "Core3",
-              box(title = "Top 5 Countries with Highest Confirmed Cases",
-                  solidHeader = TRUE, 
-                  plotOutput("plot"))
-              ),
       tabItem(tabName = "Menu1", 
               box(
                 title = "Top 5 Countries with Most Deaths",
@@ -104,27 +102,50 @@ dashboardPage(
                 solidHeader = TRUE, 
                 leafletOutput('map')
               )),
-      tabItem(tabName = "Devs",
-              box(
-                  title = "Kevin Chen",
-                  id = "KC",
-                  textOutput("reach"), 
-                  a("Linkedin", href="https://www.linkedin.com/in/kevinchen404/", target="_blank"),
-                  a("Github", href="https://github.com/kchen11", target="_blank")
-                ),
-              box(title = "Shayela Alam",
-                  id = "SA"
-                  ),
-              box(title = "Samuel Doan",
-                  id = "SD"
-                  )
-              ),
+
       tabItem(tabName = "Sauce",
               box(title = "Coronavirus Data Source",
                   id = 'link',
                   textOutput('saucy'),
-                  a("Github", href="https://github.com/CSSEGISandData/COVID-19", target="_blank"))
+                  a("Github", href="https://github.com/CSSEGISandData/COVID-19", target="_blank")),
+              box(title = "Icon Data Source",
+                  id = 'link',
+                  textOutput('saucyicon'),
+                  a("Flaticon", href="https://www.flaticon.com/", target="_blank")
               )
+              ),
+      tabItem(tabName = "Devs",
+              widgetUserBox(
+                title = "Kevin Chen",
+                subtitle = "Data Analyst",
+                type = 2,
+                src = "https://cdn.frankerfacez.com/emoticon/290036/4",
+                background = TRUE,
+                backgroundUrl = "https://images.unsplash.com/photo-1470290449668-02dd93d9420a?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D",
+                closable = TRUE,
+                "Feel free to reach out!",
+                a("Linkedin", href="https://www.linkedin.com/in/kevinchen404/", target="_blank"),
+                a("Github", href="https://github.com/kchen11", target="_blank")
+              ),
+              widgetUserBox(
+                title = "Shayela Alam",
+                subtitle = "Data Analyst",
+                type = 2,
+                src = "https://www.flaticon.com/svg/static/icons/svg/843/843331.svg",
+                background = TRUE,
+                backgroundUrl = "https://images.unsplash.com/photo-1604430931972-c2cd5e10004f?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D",
+                closable = TRUE
+              ),
+              widgetUserBox(
+                title = "Samuel Doan",
+                subtitle = "Cybersecurity Specialist",
+                type = 2,
+                src = "https://www.flaticon.com/svg/static/icons/svg/2716/2716612.svg",
+                background = TRUE,
+                backgroundUrl = "https://images.unsplash.com/photo-1604093882750-3ed498f3178b?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D ",
+                closable = TRUE
+              )
+      )
     )
   ),
   title = "Coronavirus Dashboard"
